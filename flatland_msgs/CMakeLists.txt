@@ -24,12 +24,15 @@ add_message_files(FILES
   Collision.msg
   Collisions.msg
   Vector2.msg
+  Model.msg
 )
 
 add_service_files(FILES
   SpawnModel.srv
   DeleteModel.srv
   MoveModel.srv
+  SpawnModels.srv
+  DeleteModels.srv
 )
 
 generate_messages(

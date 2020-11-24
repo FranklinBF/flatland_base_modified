@@ -44,6 +44,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <flatland_msgs/SpawnModels.h>
+#include <flatland_msgs/DeleteModels.h>
+
+
 #include <flatland_msgs/DeleteModel.h>
 #include <flatland_msgs/MoveModel.h>
 #include <flatland_msgs/SpawnModel.h>
@@ -67,8 +71,13 @@ class ServiceManager {
  public:
   World *world_;                ///< aaa handle to the simulation world
   SimulationManager *sim_man_;  ///< a handle to the simulation manager
-
-  ros::ServiceServer spawn_model_service_;   ///< service for spawning models
+  
+  /* my added services*/
+  ros::ServiceServer spawn_models_service_;   ///< service for spawning several models
+  ros::ServiceServer delete_models_service_;  ///< service for deleting several models
+  
+  /* flatland defalt services*/
+  ros::ServiceServer spawn_model_service_;   ///< service for spawning models 
   ros::ServiceServer delete_model_service_;  ///< service for deleting models
   ros::ServiceServer move_model_service_;    ///< service for moving models
   ros::ServiceServer pause_service_;   ///< service for pausing the simulation
@@ -82,7 +91,24 @@ class ServiceManager {
    * @param[in] world A handle to the simulation world
    */
   ServiceManager(SimulationManager *sim_man, World *world);
+  
 
+  /**
+   * @brief Callback for the spawn models service
+   * @param[in] request Contains the request data for the service
+   * @param[in/out] response Contains the response for the service
+   */
+  bool SpawnModels(flatland_msgs::SpawnModels::Request &request,
+                  flatland_msgs::SpawnModels::Response &response);
+
+  /**
+   * @brief Callback for the delete models service
+   * @param[in] request Contains the request data for the service
+   * @param[in/out] response Contains the response for the service
+   */
+  bool DeleteModels(flatland_msgs::DeleteModels::Request &request,
+                   flatland_msgs::DeleteModels::Response &response);
+                   
   /**
    * @brief Callback for the spawn model service
    * @param[in] request Contains the request data for the service

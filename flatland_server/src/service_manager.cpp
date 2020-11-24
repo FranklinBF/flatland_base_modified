@@ -53,7 +53,14 @@ namespace flatland_server {
 ServiceManager::ServiceManager(SimulationManager *sim_man, World *world)
     : world_(world), sim_man_(sim_man) {
   ros::NodeHandle nh;
+  
+  /*my added services*/
+  spawn_models_service_ =
+      nh.advertiseService("spawn_models", &ServiceManager::SpawnModels, this);
+  delete_models_service_ =
+      nh.advertiseService("delete_models", &ServiceManager::DeleteModels, this);
 
+  /*flatland default services*/
   spawn_model_service_ =
       nh.advertiseService("spawn_model", &ServiceManager::SpawnModel, this);
   delete_model_service_ =
@@ -65,6 +72,18 @@ ServiceManager::ServiceManager(SimulationManager *sim_man, World *world)
       nh.advertiseService("resume", &ServiceManager::Resume, this);
   toggle_pause_service_ =
       nh.advertiseService("toggle_pause", &ServiceManager::TogglePause, this);
+  
+  if (spawn_models_service_) {
+    ROS_INFO_NAMED("Service Manager", "Several Models spawning service ready to go");
+  } else {
+    ROS_ERROR_NAMED("Service Manager", "Error starting several model spawning service");
+  }
+
+  if (delete_models_service_) {
+    ROS_INFO_NAMED("Service Manager", "Several Models deleting service ready to go");
+  } else {
+    ROS_ERROR_NAMED("Service Manager", "Error starting several model deleting service");
+  }
 
   if (spawn_model_service_) {
     ROS_INFO_NAMED("Service Manager", "Model spawning service ready to go");
@@ -84,6 +103,34 @@ ServiceManager::ServiceManager(SimulationManager *sim_man, World *world)
     ROS_ERROR_NAMED("Service Manager", "Error starting model moving service");
   }
 }
+
+bool ServiceManager::SpawnModels(flatland_msgs::SpawnModels::Request &request,
+                                flatland_msgs::SpawnModels::Response &response) {
+
+  ros::WallTime real_time_start=ros::WallTime::now();
+  ROS_DEBUG_NAMED("ServiceManager","Request to spawn %d models",(int)request.models.size());
+  response.success=true;
+  response.message="";
+
+  for(int i=0;i<request.models.size();i++){
+    flatland_msgs::Model model=request.models[i];
+    Pose pose(model.pose.x, model.pose.y, model.pose.theta);
+
+    try{
+      world_->LoadModel(model.yaml_path,model.ns,model.name,pose);
+    }catch(const std::exception &e){
+      response.success=false;
+      response.message=std::string(e.what());
+      ROS_ERROR_NAMED("ServiceManager", "Failed to load model! Exception: %s",
+                    e.what());
+    }
+
+  }
+  ROS_WARN("Spawning models in flatland: %f",(ros::WallTime::now()-real_time_start).toSec());
+
+  return true;
+}
+
 
 bool ServiceManager::SpawnModel(flatland_msgs::SpawnModel::Request &request,
                                 flatland_msgs::SpawnModel::Response &response) {
@@ -107,6 +154,28 @@ bool ServiceManager::SpawnModel(flatland_msgs::SpawnModel::Request &request,
                     e.what());
   }
 
+  return true;
+}
+
+bool ServiceManager::DeleteModels(
+    flatland_msgs::DeleteModels::Request &request,
+    flatland_msgs::DeleteModels::Response &response) {
+
+  ros::WallTime real_time_start=ros::WallTime::now();
+  ROS_DEBUG_NAMED("ServiceManager", "Delete %d modles",(int)request.names.size());
+  response.success=false;
+  response.message="";
+
+  for(int i=0;i<request.names.size();i++){
+    try{
+      world_->DeleteModel(request.names[i]);
+    }catch(const std::exception &e){
+      response.success=false;
+      response.message=std::string(e.what());
+    }
+  }
+
+ ROS_WARN("Delete models in flatland: %f",(ros::WallTime::now()-real_time_start).toSec());
   return true;
 }
 
